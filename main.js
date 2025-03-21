@@ -37,6 +37,9 @@ class GameScene extends Phaser.Scene {//Tela do Jogo
     }
 
     create() {
+        // Detecta se o jogo está sendo executado em um dispositivo móvel
+        this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
+
         this.fundo = this.add.tileSprite( //Adiciona o fundo do jogo com efeito de movimentação
             this.cameras.main.centerX,
             this.cameras.main.centerY,
@@ -56,8 +59,17 @@ class GameScene extends Phaser.Scene {//Tela do Jogo
 
         this.galinha.play('correndo');
 
-        this.teclaEspaco = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE); //Configura a tecla ESPAÇO para pular
-        this.teclaW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W); //Configura a tecla W para planar
+        // Adiciona suporte ao toque na tela para dispositivos móveis
+        if (this.isMobile) {
+            this.input.on('pointerdown', () => {
+                this.galinha.setVelocityY(-1000); // Faz a galinha pular
+                this.soltarOvo(); // Solta um ovo ao pular
+            });
+        }
+
+        // Adiciona suporte ao teclado para desktops
+        this.teclaEspaco = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE); // Configura a tecla ESPAÇO para pular
+        this.teclaW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W); // Configura a tecla W para planar
 
         this.troncos = this.physics.add.group({ //Cria e configura os troncos como obstáculos
             allowGravity: false //Evita que os troncos caiam com a fisica
@@ -95,22 +107,30 @@ class GameScene extends Phaser.Scene {//Tela do Jogo
             repeat: 0
         });
 
+        // Adiciona suporte ao toque na tela
+        this.input.on('pointerdown', () => {
+            this.galinha.setVelocityY(-1000); // Faz a galinha pular
+            this.soltarOvo(); // Solta um ovo ao pular
+        });
+
     }
 
     update() {
         this.fundo.tilePositionX += 10; //Movimenta o fundo
     
-        //Pulo normal com espaço
-        if (Phaser.Input.Keyboard.JustDown(this.teclaEspaco)) { 
-            this.galinha.setVelocityY(-1000); //Pulo
+        // Pulo normal com espaço (apenas para desktops)
+        if (!this.isMobile && Phaser.Input.Keyboard.JustDown(this.teclaEspaco)) {
+            this.galinha.setVelocityY(-1000); // Pulo
             this.soltarOvo();
         }
-        if (this.teclaW.isDown && this.galinha.body.velocity.y > 0) { //Se o jogador segurar W, a galinha plana reduzindo a velocidade de queda
-            this.galinha.setVelocityY(100); //Faz a galinha descer lentamente
+
+        // Planar com a tecla W (apenas para desktops)
+        if (!this.isMobile && this.teclaW.isDown && this.galinha.body.velocity.y > 0) {
+            this.galinha.setVelocityY(100); // Faz a galinha descer lentamente
         }
-    
-        if (!this.teclaW.isDown && this.galinha.body.velocity.y > 100) {//Se soltar W, a gravidade volta ao normal
-            this.galinha.setVelocityY(300); //Volta a cair normalmente
+
+        if (!this.isMobile && !this.teclaW.isDown && this.galinha.body.velocity.y > 100) {
+            this.galinha.setVelocityY(300); // Volta a cair normalmente
         }
     
         if (this.galinha.y > this.cameras.main.height - 300) { //Mantém a galinha dentro da altura limite da tela
@@ -230,6 +250,7 @@ const config = { //Configuração do Phaser
         mode: Phaser.Scale.NONE,
         autoCenter: Phaser.Scale.CENTER_BOTH
     }
+    
 };
 
 const game = new Phaser.Game(config); //Cria o jogo
